@@ -11,4 +11,4 @@ This is a Postman collection that calls Google Analytics to query the report and
 	1. Save the `refresh_token` in a safe place (**Important !**)
 	2. Save the `access_token` and use it in the next couple minutes.
 
-* If you forgot to save the `refresh_token` for the first time you send the request, you won't be able to get the `refresh_token` again. Here what you need to do: go to [Google Sign-in & security](https://www.google.com/settings/u/1/security) ==> scroll down to `Connected apps & sites` and click `MANAGE APPS` ==> click on your project ==> click `REMOVE`
+* If you forgot to save the `refresh_token` for the first time you send the request, you won't be able to get the `refresh_token` again. Here's what you need to do: go to [Google Sign-in & security](https://www.google.com/settings/u/1/security) ==> scroll down to `Connected apps & sites` and click `MANAGE APPS` ==> click on your project ==> click `REMOVE` ==> click `Request Token` in Postman again
