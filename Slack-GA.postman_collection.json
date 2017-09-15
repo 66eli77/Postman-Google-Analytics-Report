@@ -1,0 +1,156 @@
+{
+	"variables": [],
+	"info": {
+		"name": "Slack-GA",
+		"_postman_id": "47ec1a61-8bd3-8204-080d-a99405ca995d",
+		"description": "",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "GA Fetch",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"tests[\"Status code is 200\"] = (pm.response.code === 200);",
+							"",
+							"if(pm.response.code === 200) {",
+							"    var results = {",
+							"        \"text\": pm.response.text(),",
+							"    };",
+							"    pm.environment.set('GA_results', JSON.stringify(results));",
+							"    postman.setNextRequest(\"Post on Slack\");",
+							"    console.log('elieli:: HAHAHA!')",
+							"} else if(pm.response.code === 401) {",
+							"    postman.setNextRequest(\"Refresh Token\");",
+							"    console.log('elieli:: 00000!')",
+							"}"
+						]
+					}
+				}
+			],
+			"request": {
+				"url": "https://analyticsreporting.googleapis.com/v4/reports:batchGet",
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{access_token}}",
+						"description": ""
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\treportRequests: [\n\t\t{\n\t\t\tviewId: {{View-ID}},\n\t\t\tdateRanges: [\n\t\t\t\t{\n\t\t\t\t\tstartDate: '7daysAgo',\n\t\t\t\t\tendDate: 'today'\n\t\t\t\t}\n\t\t\t],\n\t\t\tmetrics: [\n\t\t\t\t{\n\t\t\t\t\texpression: 'ga:sessions'\n\t\t\t\t}\n\t\t\t]\n\t\t}\n\t]\n}"
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "Refresh Token",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"tests[\"Status code is 200\"] = (pm.response.code === 200);",
+							"",
+							"if(pm.response.code === 200) {",
+							"    pm.environment.set('access_token', pm.response.json().access_token);",
+							"    postman.setNextRequest(\"GA Fetch\");",
+							"    console.log('elieli:: pass!')",
+							"} else if(pm.response.code === 401) {",
+							"    postman.setNextRequest(null); // terminate the collection run and warn the user in the test message.",
+							"    tests[\"refresh_token issue! Terminate the collection run.\"] = false;",
+							"    console.log('elieli:: NONO!')",
+							"}"
+						]
+					}
+				}
+			],
+			"request": {
+				"url": "https://www.googleapis.com/oauth2/v4/token",
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "client_id",
+							"value": "{{client_id}}",
+							"type": "text",
+							"description": ""
+						},
+						{
+							"key": "client_secret",
+							"value": "{{client_secret}}",
+							"type": "text",
+							"description": ""
+						},
+						{
+							"key": "grant_type",
+							"value": "refresh_token",
+							"type": "text",
+							"description": ""
+						},
+						{
+							"key": "refresh_token",
+							"value": "{{refresh_token}}",
+							"type": "text",
+							"description": ""
+						}
+					]
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "Post on Slack",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"console.log('elieliCCCC::: ', pm.response.code);"
+						]
+					}
+				}
+			],
+			"request": {
+				"url": "{{webhook}}",
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/x-www-form-urlencoded",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{{GA_results}}"
+				},
+				"description": ""
+			},
+			"response": []
+		}
+	]
+}
