@@ -1,0 +1,293 @@
+{
+	"variables": [],
+	"info": {
+		"name": "Slack-Weekly-Pageview-Report",
+		"_postman_id": "47ec1a61-8bd3-8204-080d-a99405ca995d",
+		"description": "<a href=\"https://i.imgur.com/kIVcm08.png\" target=\"_blank\"><img src=\"https://i.imgur.com/kIVcm08.png\"></a>\n\nThis collection calls Google Analytics Reporting API to query the report and post to Slack.\n\n### Workflow:\n\n<a href=\"https://i.imgur.com/LHSsq9G.png\" target=\"_blank\"><img src=\"https://i.imgur.com/LHSsq9G.png\"></a>\n\n### Notes:\n\n* You need to set up a project with [Google APIs console](https://console.developers.google.com/apis/credentials). And under `Credentials`, follow this workflow: click `Create credentials` ==> choose `OAuth client ID` ==> select `Web application` -> fill <your name> -> fill <your redirect url> with `https://www.getpostman.com/oauth2/callback` ==> click `Create`\n\t1. save the `Client ID` and `Client secret` in a safe place.\n\n<a href=\"https://i.imgur.com/fiPAJk7.png\" target=\"_blank\"><img src=\"https://i.imgur.com/fiPAJk7.png\"></a>\n\n* Go to this collection in Postman, under the `Auth` tag, follow this workflow: choose `OAuth 2.0` from the Tpye dropdown list ==> click `Get New Access Token` ==> fill `Auth URL` with `https://accounts.google.com/o/oauth2/v2/auth?access_type=offline` -> fill `Access Token URL` with `https://www.googleapis.com/oauth2/v4/token` -> fill `Client ID` with the client ID you got above -> fill `Client Secret` with the client secret you got above -> fill `Scope(Optional)` with `https://www.googleapis.com/auth/analytics.readonly` -> select `Authorization Code` from the dropdown list -> check `Request access token locally` -> click `Request Token`\n\t1. Save the `refresh_token` in a safe place (**Important !**)\n\t2. Save the `access_token` and use it in the next couple minutes.\n\n<a href=\"https://i.imgur.com/6g45Zor.png\" target=\"_blank\"><img src=\"https://i.imgur.com/6g45Zor.png\"></a>\n\n* If you forgot to save the `refresh_token` for the first time you send the request, you won't be able to get the `refresh_token` again. Here's what you need to do: go to [Google Sign-in & security](https://www.google.com/settings/u/1/security) ==> scroll down to `Connected apps & sites` and click `MANAGE APPS` ==> click on your project ==> click `REMOVE` ==> click `Request Token` in Postman again\n\n<a href=\"https://i.imgur.com/wL86flT.png\" target=\"_blank\"><img src=\"https://i.imgur.com/wL86flT.png\"></a>",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Fetch Avg Pageview",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"if (pm.response.code === 200) {",
+							"    //average Mon",
+							"    const mon_total_value = pm.response.json().reports[0].data.totals[0].values[0];",
+							"    const mon_total_day = pm.response.json().reports[0].data.rowCount;",
+							"    pm.environment.set('avg_mon_pageviews', mon_total_value/mon_total_day);",
+							"    ",
+							"    //average Tue, Wed, and Thu",
+							"    const TueThu_total_value = pm.response.json().reports[1].data.totals[0].values[0];",
+							"    const TheThu_total_day = pm.response.json().reports[1].data.rowCount;",
+							"    pm.environment.set('avg_tuethu_pageviews', TueThu_total_value/TheThu_total_day);",
+							"    ",
+							"    //average Fri",
+							"    const fri_total_value = pm.response.json().reports[2].data.totals[0].values[0];",
+							"    const fri_total_day = pm.response.json().reports[2].data.rowCount;",
+							"    pm.environment.set('avg_fri_pageviews', fri_total_value/fri_total_day);",
+							"    ",
+							"    //average Sat",
+							"    const sat_total_value = pm.response.json().reports[3].data.totals[0].values[0];",
+							"    const sat_total_day = pm.response.json().reports[3].data.rowCount;",
+							"    pm.environment.set('avg_sat_pageviews', sat_total_value/sat_total_day);",
+							"    ",
+							"    //average Sun",
+							"    const sun_total_value = pm.response.json().reports[4].data.totals[0].values[0];",
+							"    const sun_total_day = pm.response.json().reports[4].data.rowCount;",
+							"    pm.environment.set('avg_sun_pageviews', sun_total_value/sun_total_day);",
+							"} else if (pm.response.code === 401) {",
+							"    postman.setNextRequest(\"Refresh Token\");",
+							"}",
+							""
+						]
+					}
+				}
+			],
+			"request": {
+				"url": "https://analyticsreporting.googleapis.com/v4/reports:batchGet",
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{access_token}}",
+						"description": ""
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"reportRequests\": [\n\t\t{\n\t\t\t\"viewId\": {{View-ID}},\n\t\t\t\"dateRanges\": [\n\t\t\t\t{\n\t\t\t\t\t\"startDate\": \"186daysAgo\",\n\t\t\t\t\t\"endDate\": \"7daysAgo\"\n\t\t\t\t}\n\t\t\t],\n\t\t\t\"metrics\": [\n\t\t\t\t{\n\t\t\t\t\t\"expression\": \"ga:pageviews\"\n\t\t\t\t}\n\t\t\t],\n\t\t\t\"dimensions\":[\n\t\t\t\t{\n\t\t\t\t\t\"name\":\"ga:date\"\n\t\t\t\t}\n\t\t\t],\n\t\t\t\"dimensionFilterClauses\": [\n\t\t        {\n\t\t\t\t\t\"filters\": [\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\"dimensionName\": \"ga:dayOfWeek\",\n\t\t\t\t\t\t\t\"operator\": \"NUMERIC_EQUAL\",\n\t\t\t\t\t\t\t\"expressions\": [\"1\"]\n\t\t\t\t\t\t}\n\t\t\t\t\t]\n\t\t\t\t}\n\t\t\t]\n\t\t},\n\t\t{\n\t\t\t\"viewId\": {{View-ID}},\n\t\t\t\"dateRanges\": [\n\t\t\t\t{\n\t\t\t\t\t\"startDate\": \"186daysAgo\",\n\t\t\t\t\t\"endDate\": \"7daysAgo\"\n\t\t\t\t}\n\t\t\t],\n\t\t\t\"metrics\": [\n\t\t\t\t{\n\t\t\t\t\t\"expression\": \"ga:pageviews\"\n\t\t\t\t}\n\t\t\t],\n\t\t\t\"dimensions\":[\n\t\t\t\t{\n\t\t\t\t\t\"name\":\"ga:date\"\n\t\t\t\t}\n\t\t\t],\n\t\t\t\"dimensionFilterClauses\": [\n\t\t        {\n\t\t        \t\"operator\": \"AND\",\n\t\t\t\t\t\"filters\": [\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\"dimensionName\": \"ga:dayOfWeek\",\n\t\t\t\t\t\t\t\"operator\": \"NUMERIC_GREATER_THAN\",\n\t\t\t\t\t\t\t\"expressions\": [\"1\"]\n\t\t\t\t\t\t},\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\"dimensionName\": \"ga:dayOfWeek\",\n\t\t\t\t\t\t\t\"operator\": \"NUMERIC_LESS_THAN\",\n\t\t\t\t\t\t\t\"expressions\": [\"5\"]\n\t\t\t\t\t\t}\n\t\t\t\t\t]\n\t\t\t\t}\n\t\t\t]\n\t\t},\n\t\t{\n\t\t\t\"viewId\": {{View-ID}},\n\t\t\t\"dateRanges\": [\n\t\t\t\t{\n\t\t\t\t\t\"startDate\": \"186daysAgo\",\n\t\t\t\t\t\"endDate\": \"7daysAgo\"\n\t\t\t\t}\n\t\t\t],\n\t\t\t\"metrics\": [\n\t\t\t\t{\n\t\t\t\t\t\"expression\": \"ga:pageviews\"\n\t\t\t\t}\n\t\t\t],\n\t\t\t\"dimensions\":[\n\t\t\t\t{\n\t\t\t\t\t\"name\":\"ga:date\"\n\t\t\t\t}\n\t\t\t],\n\t\t\t\"dimensionFilterClauses\": [\n\t\t        {\n\t\t\t\t\t\"filters\": [\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\"dimensionName\": \"ga:dayOfWeek\",\n\t\t\t\t\t\t\t\"operator\": \"NUMERIC_EQUAL\",\n\t\t\t\t\t\t\t\"expressions\": [\"5\"]\n\t\t\t\t\t\t}\n\t\t\t\t\t]\n\t\t\t\t}\n\t\t\t]\n\t\t},\n\t\t{\n\t\t\t\"viewId\": {{View-ID}},\n\t\t\t\"dateRanges\": [\n\t\t\t\t{\n\t\t\t\t\t\"startDate\": \"186daysAgo\",\n\t\t\t\t\t\"endDate\": \"7daysAgo\"\n\t\t\t\t}\n\t\t\t],\n\t\t\t\"metrics\": [\n\t\t\t\t{\n\t\t\t\t\t\"expression\": \"ga:pageviews\"\n\t\t\t\t}\n\t\t\t],\n\t\t\t\"dimensions\":[\n\t\t\t\t{\n\t\t\t\t\t\"name\":\"ga:date\"\n\t\t\t\t}\n\t\t\t],\n\t\t\t\"dimensionFilterClauses\": [\n\t\t        {\n\t\t\t\t\t\"filters\": [\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\"dimensionName\": \"ga:dayOfWeek\",\n\t\t\t\t\t\t\t\"operator\": \"NUMERIC_EQUAL\",\n\t\t\t\t\t\t\t\"expressions\": [\"6\"]\n\t\t\t\t\t\t}\n\t\t\t\t\t]\n\t\t\t\t}\n\t\t\t]\n\t\t},\n\t\t{\n\t\t\t\"viewId\": {{View-ID}},\n\t\t\t\"dateRanges\": [\n\t\t\t\t{\n\t\t\t\t\t\"startDate\": \"186daysAgo\",\n\t\t\t\t\t\"endDate\": \"7daysAgo\"\n\t\t\t\t}\n\t\t\t],\n\t\t\t\"metrics\": [\n\t\t\t\t{\n\t\t\t\t\t\"expression\": \"ga:pageviews\"\n\t\t\t\t}\n\t\t\t],\n\t\t\t\"dimensions\":[\n\t\t\t\t{\n\t\t\t\t\t\"name\":\"ga:date\"\n\t\t\t\t}\n\t\t\t],\n\t\t\t\"dimensionFilterClauses\": [\n\t\t        {\n\t\t\t\t\t\"filters\": [\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\"dimensionName\": \"ga:dayOfWeek\",\n\t\t\t\t\t\t\t\"operator\": \"NUMERIC_EQUAL\",\n\t\t\t\t\t\t\t\"expressions\": [\"0\"]\n\t\t\t\t\t\t}\n\t\t\t\t\t]\n\t\t\t\t}\n\t\t\t]\n\t\t}\n\t]\n}"
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "Fetch Weekly Pageview",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"if (pm.response.code === 200) {",
+							"    const moment = require('moment');",
+							"    let report = { \"text\": \"No reliable data yet, please check Google Analytics at a later time.\" };",
+							"    const data = pm.response.json().reports[0].data;",
+							"    const start_date = moment(data.rows[0].dimensions, 'YYYY-MM-DD').format('L');",
+							"    const end_date = moment(data.rows[6].dimensions, 'YYYY-MM-DD').format('L');",
+							"    const upper_bund = 1.3; // + 30%",
+							"    const lower_bund = 0.7; // - 30%",
+							"    const max_mon_threshold = pm.environment.get('avg_mon_pageviews') * upper_bund;",
+							"    const min_mon_threshold = pm.environment.get('avg_mon_pageviews') * lower_bund;",
+							"    const max_tuethu_threshold = pm.environment.get('avg_tuethu_pageviews') * upper_bund;",
+							"    const min_tuethu_threshold = pm.environment.get('avg_tuethu_pageviews') * lower_bund;",
+							"    const max_fri_threshold = pm.environment.get('avg_fri_pageviews') * upper_bund;",
+							"    const min_fri_threshold = pm.environment.get('avg_fri_pageviews') * lower_bund;",
+							"    const max_sat_threshold = pm.environment.get('avg_sat_pageviews') * upper_bund;",
+							"    const min_sat_threshold = pm.environment.get('avg_sat_pageviews') * lower_bund;",
+							"    const max_sun_threshold = pm.environment.get('avg_sun_pageviews') * upper_bund;",
+							"    const min_sun_threshold = pm.environment.get('avg_sun_pageviews') * lower_bund;",
+							"    ",
+							"    if (data.isDataGolden) {",
+							"        report = {",
+							"            \"attachments\": [{",
+							"                \"pretext\": \"<https://analytics.google.com/analytics/web/?authuser=2#report/content-pages/a43979731w76722927p79319544/%3F_u.dateOption%3Dlast7days%26_r.tabId%3Dexplorer/|Check Google Analytics for more detail>\",",
+							"                \"author_name\": \"www.getpostman.com\",",
+							"                \"color\": \"#E2763B\",",
+							"                \"title\": \"Weekly Pageview Report\",",
+							"                \"text\": \"from `\" + start_date + '` to `' + end_date + '`',",
+							"                \"footer\": \":fire: : more than 30% increase than past 3 months average. \\n\\n :scream: : more than 30% decrease than past 3 months average.\",",
+							"                \"fallback\": \"Oops! Failed to render the data table.\",",
+							"                \"mrkdwn_in\": [\"fields\", \"text\"],",
+							"                \"fields\": [",
+							"        \t\t\t{",
+							"        \t\t\t    \"title\": \"Date\",",
+							"        \t\t\t\t\"value\": \"\",",
+							"        \t\t\t\t'short': true",
+							"        \t\t\t},",
+							"        \t\t\t{",
+							"        \t\t\t    \"title\": \"Pageviews\",",
+							"        \t\t\t\t\"value\": \"\",",
+							"        \t\t\t\t'short': true",
+							"        \t\t\t}",
+							"                ]",
+							"            }]",
+							"        };",
+							"        data.rows.forEach(val => {",
+							"            let week = moment(val.dimensions, 'YYYY-MM-DD').format('ddd');",
+							"            report.attachments[0].fields[0].value += week + \"\\n\\n\";",
+							"            ",
+							"            report.attachments[0].fields[1].value += +(val.metrics[0].values/1000).toFixed(1) + 'K';",
+							"            if (week === 'Mon') {",
+							"                if (val.metrics[0].values > max_mon_threshold) {",
+							"                    report.attachments[0].fields[1].value += ' :fire:';",
+							"                } else if (val.metrics[0].values < min_mon_threshold) {",
+							"                    report.attachments[0].fields[1].value += ' :scream:';",
+							"                }",
+							"            } else if (week === 'Tue' || week === 'Wed' || week === 'Thu') {",
+							"                if (val.metrics[0].values > max_tuethu_threshold) {",
+							"                    report.attachments[0].fields[1].value += ' :fire:';",
+							"                } else if (val.metrics[0].values < min_tuethu_threshold) {",
+							"                    report.attachments[0].fields[1].value += ' :scream:';",
+							"                }",
+							"            } else if (week === 'Fri') {",
+							"                if (val.metrics[0].values > max_fri_threshold) {",
+							"                    report.attachments[0].fields[1].value += ' :fire:';",
+							"                } else if (val.metrics[0].values < min_fri_threshold) {",
+							"                    report.attachments[0].fields[1].value += ' :scream:';",
+							"                }",
+							"            } else if (week === 'Sat') {",
+							"                if (val.metrics[0].values > max_sat_threshold) {",
+							"                    report.attachments[0].fields[1].value += ' :fire:';",
+							"                } else if (val.metrics[0].values < min_sat_threshold) {",
+							"                    report.attachments[0].fields[1].value += ' :scream:';",
+							"                }",
+							"            } else if (week === 'Sun') {",
+							"                if (val.metrics[0].values > max_sun_threshold) {",
+							"                    report.attachments[0].fields[1].value += ' :fire:';",
+							"                } else if (val.metrics[0].values < min_sun_threshold) {",
+							"                    report.attachments[0].fields[1].value += ' :scream:';",
+							"                }",
+							"            }",
+							"            report.attachments[0].fields[1].value += \"\\n\\n\";",
+							"        });",
+							"    }",
+							"    ",
+							"    pm.environment.set('GA_report', JSON.stringify(report));",
+							"    postman.setNextRequest(\"Post on Slack\");",
+							"}",
+							""
+						]
+					}
+				}
+			],
+			"request": {
+				"url": "https://analyticsreporting.googleapis.com/v4/reports:batchGet",
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{access_token}}",
+						"description": ""
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"reportRequests\": [\n\t\t{\n\t\t\t\"viewId\": {{View-ID}},\n\t\t\t\"dateRanges\": [\n\t\t\t\t{\n\t\t\t\t\t\"startDate\": \"7daysAgo\",\n\t\t\t\t\t\"endDate\": \"yesterday\"\n\t\t\t\t}\n\t\t\t],\n\t\t\t\"metrics\": [\n\t\t\t\t{\n\t\t\t\t\t\"expression\": \"ga:pageviews\"\n\t\t\t\t}\n\t\t\t],\n\t\t\t\"dimensions\":[\n\t\t\t\t{\n\t\t\t\t  \"name\":\"ga:date\"\n\t\t\t\t}\n\t\t\t]\n\t\t}\n\t]\n}"
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "Refresh Token",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"tests[\"Status code is 200\"] = (pm.response.code === 200);",
+							"",
+							"if (pm.response.code === 200) {",
+							"    pm.environment.set('access_token', pm.response.json().access_token);",
+							"    postman.setNextRequest(\"Fetch Avg Pageview\");",
+							"} else if (pm.response.code === 401) {",
+							"    postman.setNextRequest(null); // terminate the collection run and warn the user in the test message.",
+							"    tests[\"refresh_token issue! Terminate the collection run.\"] = false;",
+							"}"
+						]
+					}
+				}
+			],
+			"request": {
+				"url": "https://www.googleapis.com/oauth2/v4/token",
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/x-www-form-urlencoded",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "client_id",
+							"value": "{{client_id}}",
+							"type": "text",
+							"description": ""
+						},
+						{
+							"key": "client_secret",
+							"value": "{{client_secret}}",
+							"type": "text",
+							"description": ""
+						},
+						{
+							"key": "grant_type",
+							"value": "refresh_token",
+							"type": "text",
+							"description": ""
+						},
+						{
+							"key": "refresh_token",
+							"value": "{{refresh_token}}",
+							"type": "text",
+							"description": ""
+						}
+					]
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "Post on Slack",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"tests[\"Status code is 200\"] = (pm.response.code === 200);"
+						]
+					}
+				}
+			],
+			"request": {
+				"url": "{{webhook}}",
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/x-www-form-urlencoded",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{{GA_report}}"
+				},
+				"description": ""
+			},
+			"response": []
+		}
+	]
+}
