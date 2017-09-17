@@ -6,7 +6,7 @@ This collection calls Google Analytics Reporting API to query the report and pos
 
 ### Workflow:
 
-<a href="https://i.imgur.com/LHSsq9G.png" target="_blank"><img src="https://i.imgur.com/LHSsq9G.png"></a>
+<a href="https://i.imgur.com/wOt1TKv.png" target="_blank"><img src="https://i.imgur.com/wOt1TKv.png"></a>
 
 ### Notes:
 
